@@ -3,8 +3,11 @@ FROM ubuntu:18.04
 ENV DEBIAN_FRONTEND noninteractive
 ENV GOPATH /go
 ENV QEMU_ROOT /var/lib/runq/qemu
+ENV GO_URL https://golang.org/dl/go1.14.4.linux-amd64.tar.gz
+ENV GO_SHA256 aed845e4185a0b2a3c3d5e1d0a35491702c55889192bb9c30e67a3de6849c067
+ENV PATH /usr/local/go/bin:$PATH
 
-WORKDIR /go/src/github.com/gotoz/runq
+WORKDIR /runq
 
 RUN echo "do_initrd = no" >> /etc/kernel-img.conf \
     && apt-get update \
@@ -15,15 +18,21 @@ RUN echo "do_initrd = no" >> /etc/kernel-img.conf \
         cpio \
         e2fsprogs \
         git \
-        golang \
         libseccomp-dev \
         linux-virtual \
         pkg-config \
         qemu-kvm \
         rsync \
+        wget \
         xz-utils
 
-RUN go get -d github.com/opencontainers/runc
+RUN set -eu; \
+    wget -q -O go.tar.gz $GO_URL; \
+    echo "$GO_SHA256 go.tar.gz" | sha256sum -c -; \
+    tar -C /usr/local -xzf go.tar.gz; \
+    rm -f go.tar.gz
+
+RUN git clone https://github.com/opencontainers/runc.git /runc
 
 RUN mkdir -p \
     $QEMU_ROOT/dev \
